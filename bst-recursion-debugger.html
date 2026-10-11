@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BST Recursion Debugger</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, sans-serif;
+        color: #e9eef8;
+        background: #0b1220;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 28px;
+      }
+      header {
+        max-width: 1100px;
+        margin: auto auto 22px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      p {
+        color: #9eabc0;
+        margin: 0;
+      }
+      .layout {
+        max-width: 1100px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 16px;
+      }
+      .panel {
+        background: #141e30;
+        border: 1px solid #293750;
+        border-radius: 14px;
+        padding: 18px;
+        min-width: 0;
+      }
+      .wide {
+        grid-column: 1/-1;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0;
+      }
+      .tag {
+        font-size: 12px;
+        color: #a9b9d3;
+        background: #26364f;
+        padding: 5px 10px;
+        border-radius: 20px;
+      }
+      svg {
+        width: 100%;
+        height: 270px;
+      }
+      .edge {
+        stroke: #64748b;
+        stroke-width: 2;
+      }
+      .node {
+        fill: #43526c;
+        stroke: #73839e;
+        stroke-width: 2;
+        transition: 0.2s;
+      }
+      .node.active {
+        fill: #2563eb;
+        stroke: #93c5fd;
+        stroke-width: 4;
+      }
+      .node.done {
+        fill: #0d9488;
+        stroke: #5eead4;
+      }
+      .node-label {
+        font-weight: 700;
+        fill: white;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      pre {
+        margin: 0;
+        font-size: 13px;
+        overflow: auto;
+        line-height: 1.7;
+      }
+      .line {
+        display: block;
+        padding: 3px 9px;
+        border-left: 3px solid transparent;
+        white-space: pre;
+      }
+      .line.active {
+        background: #1e3a5f;
+        border-color: #60a5fa;
+        color: #fff;
+      }
+      .line .num {
+        display: inline-block;
+        width: 26px;
+        color: #8291a9;
+        user-select: none;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-height: 175px;
+        justify-content: flex-end;
+      }
+      .frame {
+        background: #24354e;
+        border: 1px solid #39516e;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: monospace;
+      }
+      .frame.top {
+        border-color: #60a5fa;
+        background: #1e3a5f;
+      }
+      .console {
+        min-height: 175px;
+        background: #0b1220;
+        padding: 12px;
+        border-radius: 8px;
+        font: 14px/1.7 monospace;
+        white-space: pre-wrap;
+        color: #6ee7b7;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 9px;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      button {
+        border: 1px solid #425573;
+        background: #24354e;
+        color: #e9eef8;
+        border-radius: 8px;
+        padding: 10px 15px;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      button:hover:not(:disabled) {
+        filter: brightness(1.18);
+      }
+      select,
+      input {
+        background: #0b1220;
+        color: #e9eef8;
+        border: 1px solid #425573;
+        border-radius: 7px;
+        padding: 8px;
+      }
+      .status {
+        color: #b9c8dc;
+        margin-top: 13px;
+        line-height: 1.55;
+      }
+      .hint {
+        color: #8192ac;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      .output {
+        font-family: monospace;
+        color: #6ee7b7;
+      }
+      #stepRange {
+        flex: 1;
+        min-width: 130px;
+      }
+      #sequence {
+        width: 100%;
+        max-width: 450px;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: #a9b9d3;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+        background: #2563eb;
+      }
+      .dot.done {
+        background: #0d9488;
+      }
+      @media (max-width: 740px) {
+        body {
+          padding: 12px;
+        }
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .wide {
+          grid-column: auto;
+        }
+        h1 {
+          font-size: 23px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Binary Search Tree — Recursion Debugger</h1>
+      <p>
+        Explore JavaScript inOrder traversal one call, return, and console.log
+        at a time.
+      </p>
+    </header>
+    <main class="layout">
+      <section class="panel">
+        <div class="head">
+          <h2>Tree Visualization</h2>
+          <span class="tag" id="nodeBadge">Current: —</span>
+        </div>
+        <svg
+          viewBox="0 0 500 250"
+          id="tree"
+          role="img"
+          aria-label="Binary search tree"
+        ></svg>
+        <div class="legend">
+          <span><i class="dot"></i>Active</span
+          ><span><i class="dot done"></i>Printed</span>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="head">
+          <h2>ES6 Method</h2>
+          <span class="tag" id="lineBadge">Line —</span>
+        </div>
+        <div id="code"></div>
+        <p class="hint">
+          The blue line shows the next operation being executed.
+        </p>
+      </section>
+      <section class="panel">
+        <div class="head">
+          <h2>Call Stack</h2>
+          <span class="tag">Bottom → Top</span>
+        </div>
+        <div class="stack" id="stack"></div>
+      </section>
+      <section class="panel">
+        <div class="head">
+          <h2>Console Output</h2>
+          <span class="tag">inOrder</span>
+        </div>
+        <div class="console" id="console"></div>
+      </section>
+      <section class="panel wide">
+        <div class="head">
+          <h2>Playback Controls</h2>
+          <span class="tag" id="counter">0 / 0</span>
+        </div>
+        <div class="controls">
+          <button id="prev">← Previous</button
+          ><button class="primary" id="next">Next →</button
+          ><button id="play">▶ Auto Play</button
+          ><button id="reset">↺ Reset</button><label for="speed">Speed</label
+          ><select id="speed">
+            <option value="1200">Slow</option>
+            <option value="700" selected>Normal</option>
+            <option value="300">Fast</option>
+          </select>
+        </div>
+        <div class="controls" style="margin-top: 15px">
+          <input type="range" id="stepRange" min="0" max="0" value="0" /><label
+            for="sequence"
+            >Traversal</label
+          ><select id="sequence">
+            <option value="in">Inorder (Left → Root → Right)</option>
+            <option value="pre">Preorder (Root → Left → Right)</option>
+            <option value="post">Postorder (Left → Right → Root)</option>
+          </select>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+        <div class="hint">
+          Keyboard shortcuts: ← previous, → next, Space play/pause (when not
+          focused on an input).
+        </div>
+      </section>
+    </main>
+    <script>
+      const nodes = {
+        50: { left: 30, right: 70, x: 250, y: 34 },
+        30: { left: 20, right: 40, x: 130, y: 110 },
+        70: { left: null, right: null, x: 370, y: 110 },
+        20: { left: null, right: null, x: 65, y: 192 },
+        40: { left: null, right: null, x: 195, y: 192 },
+      };
+      const codeMap = {
+        in: [
+          "inOrder(node = this.root) {",
+          "  if (node === null) return;",
+          "  this.inOrder(node.left);",
+          "  console.log(node.data);",
+          "  this.inOrder(node.right);",
+          "}",
+        ],
+        pre: [
+          "preOrder(node = this.root) {",
+          "  if (node === null) return;",
+          "  console.log(node.data);",
+          "  this.preOrder(node.left);",
+          "  this.preOrder(node.right);",
+          "}",
+        ],
+        post: [
+          "postOrder(node = this.root) {",
+          "  if (node === null) return;",
+          "  this.postOrder(node.left);",
+          "  this.postOrder(node.right);",
+          "  console.log(node.data);",
+          "}",
+        ],
+      };
+      const $ = (id) => document.getElementById(id);
+      let trace = [],
+        idx = 0,
+        timer = null;
+      function generate(mode) {
+        const frames = [],
+          out = [];
+        const stack = [];
+        const actions =
+          mode === "in"
+            ? [
+                ["left", 3],
+                ["print", 4],
+                ["right", 5],
+              ]
+            : mode === "pre"
+              ? [
+                  ["print", 3],
+                  ["left", 4],
+                  ["right", 5],
+                ]
+              : [
+                  ["left", 3],
+                  ["right", 4],
+                  ["print", 5],
+                ];
+        function record(node, line, message) {
+          frames.push({
+            node,
+            line,
+            message,
+            stack: stack.slice(),
+            out: out.slice(),
+          });
+        }
+        function visit(node) {
+          stack.push(node);
+          record(
+            node,
+            1,
+            `Enter ${node === null ? "traversal(null)" : `traversal(${node})`}.`,
+          );
+          record(
+            node,
+            2,
+            node === null
+              ? "Base case: node === null. Return to the caller."
+              : "Node exists; continue with the traversal.",
+          );
+          if (node === null) {
+            stack.pop();
+            return;
+          }
+          for (const [action, line] of actions) {
+            if (action === "print") {
+              out.push(node);
+              record(
+                node,
+                line,
+                `console.log(${node}) — output now includes ${node}.`,
+              );
+            } else {
+              const child = nodes[node][action];
+              record(
+                node,
+                line,
+                `Call ${action} child of ${node}: ${child === null ? "null" : child}. The current function waits on the call stack.`,
+              );
+              visit(child);
+              record(
+                node,
+                line,
+                `Returned from ${action} child of ${node}; continue executing this function.`,
+              );
+            }
+          }
+          stack.pop();
+          record(node, 6, `Finished traversal(${node}); return to caller.`);
+        }
+        visit(50);
+        frames.push({
+          node: null,
+          line: 0,
+          message: "Traversal complete. All calls returned.",
+          stack: [],
+          out: out.slice(),
+        });
+        return frames;
+      }
+      function buildTree() {
+        const svg = $("tree");
+        let s = "";
+        for (const [value, n] of Object.entries(nodes)) {
+          for (const side of ["left", "right"]) {
+            const c = n[side];
+            if (c !== null) {
+              const child = nodes[c];
+              s += `<line class="edge" x1="${n.x}" y1="${n.y}" x2="${child.x}" y2="${child.y}"/>`;
+            }
+          }
+        }
+        for (const [value, n] of Object.entries(nodes)) {
+          s += `<g><circle id="circle-${value}" class="node" cx="${n.x}" cy="${n.y}" r="26"/><text class="node-label" x="${n.x}" y="${n.y}">${value}</text></g>`;
+        }
+        svg.innerHTML = s;
+      }
+      function render() {
+        const t = trace[idx];
+        $("code").innerHTML = codeMap[$("sequence").value]
+          .map(
+            (line, i) =>
+              `<pre class="line ${i + 1 === t.line ? "active" : ""}"><span class="num">${i + 1}</span>${line.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</pre>`,
+          )
+          .join("");
+        $("stack").innerHTML = t.stack.length
+          ? t.stack
+              .map(
+                (v, i) =>
+                  `<div class="frame ${i === t.stack.length - 1 ? "top" : ""}">${$("sequence").value === "in" ? "inOrder" : $("sequence").value === "pre" ? "preOrder" : "postOrder"}(${v === null ? "null" : v})</div>`,
+              )
+              .join("")
+          : '<span class="hint">Call stack is empty.</span>';
+        $("console").textContent = t.out.join("\n") || "// No output yet";
+        $("status").textContent = t.message;
+        $("counter").textContent = `Step ${idx + 1} / ${trace.length}`;
+        $("lineBadge").textContent = t.line ? `Line ${t.line}` : "Finished";
+        $("nodeBadge").textContent =
+          `Current: ${t.node === null ? "null" : t.node}`;
+        $("stepRange").value = idx;
+        $("prev").disabled = idx === 0;
+        $("next").disabled = idx === trace.length - 1;
+        for (const v of Object.keys(nodes)) {
+          $(`circle-${v}`).setAttribute(
+            "class",
+            "node" +
+              (t.node === Number(v)
+                ? " active"
+                : t.out.includes(Number(v))
+                  ? " done"
+                  : ""),
+          );
+        }
+      }
+      function stop() {
+        if (timer !== null) {
+          clearInterval(timer);
+          timer = null;
+        }
+        $("play").textContent = "▶ Auto Play";
+      }
+      function go(i) {
+        idx = Math.max(0, Math.min(trace.length - 1, i));
+        render();
+        if (idx === trace.length - 1) stop();
+      }
+      function start() {
+        if (timer !== null) {
+          stop();
+          return;
+        }
+        $("play").textContent = "Ⅱ Pause";
+        timer = setInterval(() => go(idx + 1), Number($("speed").value));
+      }
+      function init() {
+        stop();
+        trace = generate($("sequence").value);
+        $("stepRange").max = trace.length - 1;
+        go(0);
+      }
+      buildTree();
+      init();
+      $("next").onclick = () => go(idx + 1);
+      $("prev").onclick = () => go(idx - 1);
+      $("reset").onclick = init;
+      $("play").onclick = start;
+      $("sequence").onchange = init;
+      $("stepRange").oninput = (e) => {
+        stop();
+        go(Number(e.target.value));
+      };
+      $("speed").onchange = () => {
+        if (timer !== null) {
+          stop();
+          start();
+        }
+      };
+      document.addEventListener("keydown", (e) => {
+        if (
+          ["INPUT", "SELECT", "BUTTON"].includes(document.activeElement.tagName)
+        )
+          return;
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          go(idx + 1);
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          go(idx - 1);
+        }
+        if (e.code === "Space") {
+          e.preventDefault();
+          start();
+        }
+      });
+    </script>
+  </body>
+</html>
