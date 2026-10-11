@@ -38,4 +38,4 @@ return node;
 
 > **Key idea:** `#removeNode()` returns the updated subtree root. The caller assigns that return value to `node.left`, `node.right`, or `this.root` to keep the BST connected.
 >
-> ![BST](image.png)
+
